@@ -1,0 +1,35 @@
+Spider project requirements:
+	1. Figure out how to use SSLSocket to connect to HTTPS server
+	2. Create a socket connection with the SMT homepage
+	3. Retrieve the html from every page on the SMT website and copy into new html files in resources folder
+	4. No repeat pages - only one file for Home page, one for About Us, etc.
+	5. Log in to admin tools SMT page
+		-Store cookies so that user can remain logged in
+	6. Retrieve html for performance/web sockets page and copy into new html file in resources folder
+	
+Design:
+	
+	Classes: 
+		1. Socket class to make a connection to a server and get request to return html in the form of a string
+		2. Reader/Writer class to take in html string and write to a new file
+		3. Parser class that will parse the given file and return all the links from that page
+		4. Socket class using post request and credentials/cookies to log in to admin tools website and get performance/web sockets page
+		
+	Process:
+		1. Instantiate socket class with default connection to smt home page
+		2. Read/Write the resulting html string to new file, then pass that file to parser to get all the links from the home page
+		3. Add these links to a Set member variable stored in socket class - Set so there will be no duplicates
+		4. For each link stored in the links Set, create a socket connection to that link and repeat steps 1-4
+			-If a link/socket connection and corresponding html file has already been made, don't do it again
+		
+	Challenges:
+		1. Have to learn how to implement the post request and which cookies to store in order to log into admin site and keep session active
+		2. Still thinking through how to dynamically attach the socket to each link on the smt site w/o repeats
+		3. Still working on how to configure file path so that the files are created in resources folder and not limited to my local storage
+		4. Need to know which url/website we will be using. SMT homepage? staging environment page? which admintool website? 
+
+	Estimated Time to Completion:
+		8-10 work days (about 2 weeks)
+		-Still need to do a lot of research/learning how the sockets work with POST requests and sending the proper headers/body to log into admin site
+		-I have an idea of how this design will work, but not sure if it actually WILL work, so preparing for considerable time re-designing, figuring out what I need to re-think
+		
