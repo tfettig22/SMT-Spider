@@ -13,7 +13,9 @@ import org.jsoup.nodes.Document;
 
 <b>Title:</b> Parser.java<br>
 <b>Project:</b> spider<br>
-<b>Description:</b> <br>
+<b>Description:</b>
+	Parses a file, searching for all the url path extensions that are found within the file and returns them in a Set
+<br>
 <b>Copyright:</b> Copyright (c) 2023<br>
 <b>Company:</b> Silicon Mountain Technologies<br>
 @author Tom Fettig

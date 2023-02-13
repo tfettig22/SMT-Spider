@@ -1,24 +1,21 @@
 package com.fettig.spider;
 
-import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.util.Set;
-import java.util.TreeSet;
-
-import javax.net.ssl.SSLSocket;
-import javax.net.ssl.SSLSocketFactory;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /****
 
 <b>Title:</b> WebCrawler.java<br>
 <b>Project:</b> spider<br>
 <b>Description:</b>
-	This class can be used to create a socket connection to a website server and 'crawl' the site, creating new
-	html files for each unique link on the page.  It instantiates the ReaderWriter and Parser classes to do this.
-	The crawHomePage method will start by getting all the links on from the home page of the site, and
-	then the crawlOtherPages will hit the other url extensions across the site.
+	This class can be used to facilitate the workflow of creating a socket and retrieving the html of a website, writing
+	that html to a new file, and parsing the html to get all of the links that exist in the page's html. A socket will
+	be created for each link/path, and a corresponding html file will be written. Uses the SocketManager, ContentWriter,
+	and Parser classes.
 <br>
 <b>Copyright:</b> Copyright (c) 2023<br>
 <b>Company:</b> Silicon Mountain Technologies<br>
@@ -31,72 +28,98 @@ import javax.net.ssl.SSLSocketFactory;
 
 public class WebCrawler {
 	
-	private Set<String> urlExtensions = new TreeSet<>();
+	private static final String HOMEPAGE = "smt-stage.qa.siliconmtn.com";
+	private static final String ADMIN = "/sb/admintool?cPage=index&actionId=WEB_SOCKET&organizationId=SMT";
+	private static final String LOGIN_INFO = "requestType=reqBuild&pmid=ADMIN_LOGIN&emailAddress=USER_EMAIL&password=USER_PASSWORD&l=";
+
+	private Map<String, Boolean> urlExtensions = new HashMap<>();
+
 	
+	/**
+	 * Main method to instantiate the WebCrawler and enter into the process
+	 * @param args
+	 * @throws IOException
+	 */
 	public static void main(String[] args) throws IOException {
 		WebCrawler spider = new WebCrawler();
-		spider.process("smt-stage.qa.siliconmtn.com", "443");
+		spider.beginCrawling(HOMEPAGE, 443);
 	}
 	
-	public void process(String server, String port) throws IOException {
-		crawlHomePage(server, port);
-		crawlOtherPages(server, port);
-	}
-	
-	public String createGETSocket(String server, int port, String path) throws IOException {
-		StringBuilder builder = new StringBuilder();
-		SSLSocketFactory factory = (SSLSocketFactory) SSLSocketFactory.getDefault();
-		try (SSLSocket socket = (SSLSocket) factory.createSocket(server, port)) {
-			
-			socket.startHandshake();
-			
-			DataOutputStream out = new DataOutputStream(socket.getOutputStream());
-			out.writeBytes("GET " + path + " HTTP/1.0 \r\n");
-			out.writeBytes("Host: " + server + "\r\n");
-			out.writeBytes("\r\n");
-			out.flush();
-			
-			InputStreamReader in = new InputStreamReader(socket.getInputStream());
-			int input = 0;
-			while ((input = in.read()) != -1) {
-				builder.append((char) input);
-			}
-			out.close();
-			in.close();
+	/**
+	 * Begins the 'crawl' process, adds / to the map so that the default page is home page
+	 * @param server the server to connect to via socket
+	 * @param port the port number of the server
+	 * @throws IOException
+	 */
+	public void beginCrawling(String server, int port) throws IOException {
+		ConnectionManager connection = new ConnectionManager();
+		urlExtensions.put("/", false);
+		while (urlExtensions.values().contains(false)) {
+			crawlWebsite(connection, server, port);
 		}
-		return builder.toString();
 	}
 	
-	public String createPOSTSocket() {
-		return "";
-	}
-	
-	public void crawlHomePage(String server, String port) throws IOException {
-		ReaderWriter writer = new ReaderWriter();
+	/**
+	 * Instantiates ContentWriter and Parser, then loops through each urlExtension and creates a socket connection to each
+	 * Creates a new html file for each url path and then parses the path for any additional paths/links and adds them to the map
+	 * @param server the server to connect to via socket
+	 * @param port the port number of the server
+	 * @throws IOException
+	 */
+	public void crawlWebsite(ConnectionManager socket, String server, int port) throws IOException {
+		// instantiate other classes
+		Logger logger = Logger.getLogger(WebCrawler.class.getName());
+		ContentWriter writer = new ContentWriter();
 		Parser parse = new Parser();
-		urlExtensions.add("/");
-		String homeHtml = createGETSocket(server, Integer.parseInt(port), "/");
-		File homeFile = writer.writeCharsToFile("src/main/resources/smt-home.html", homeHtml);
-		for (String link : parse.parseFile(homeFile)) {
-			urlExtensions.add(link);
+		
+		// only create the post request and admin html file if none of the pages have been parsed - will only happen once
+		if (!urlExtensions.values().contains(true)) {
+			socket.createSocket(HOMEPAGE, 443, ADMIN, "post", LOGIN_INFO);
+			logger.log(Level.INFO, "login complete");
+			
+			// after post request is sent and login is complete, send get request for the admin page
+			String html = socket.createSocket(HOMEPAGE, 443, ADMIN, "get", null);
+			writer.writeCharsToFile("src/main/resources/smt-admin.html", html);
+			logger.log(Level.INFO, "admin file has been created");
 		}
-		System.out.println(urlExtensions);
-	}
-	
-	public void crawlOtherPages(String server, String port) throws IOException {
-		ReaderWriter writer = new ReaderWriter();
-		Parser parse = new Parser();
-		for (String path : urlExtensions) {
-			if (!path.equals("/")) {
-				String formatPath = new StringBuilder(path).deleteCharAt(0).toString();
-				String pathHtml = createGETSocket(server, Integer.parseInt(port), path);
-				File pathFile = writer.writeCharsToFile("src/main/resources/smt-" + formatPath + ".html", pathHtml);
+		
+		// iterate through all urls in map, creating a file for each one
+		for (Map.Entry<String, Boolean> entry : urlExtensions.entrySet()) {
+			if (Boolean.FALSE.equals(entry.getValue())) {
+				String html = socket.createSocket(server, port, entry.getKey(), "get", null);
+				File htmlFile = writer.writeCharsToFile("src/main/resources/smt-" + formatPath(entry.getKey()) + ".html", html);
+				
+				// log to console that a file has been created
+				String fileCreatedMsg = formatPath(formatPath(entry.getKey()) + " file has been created");
+				logger.log(Level.INFO, fileCreatedMsg);
+				
+				// parse the file and add any new links found to the urlExtensions map
+				for (String link : parse.parseFile(htmlFile)) {
+					if (!urlExtensions.keySet().contains(link)) {
+						urlExtensions.put(link, false);						
+					}
+				}
+				
+				// change the boolean to true once the file has been created/parsed
+				urlExtensions.put(entry.getKey(), true);
 			}
 		}
 	}
 	
-	public Set<String> getUrlExtensions() {
+	/**
+	 * Takes in a string and formats it by removing the first character
+	 * @param path the string to be formatted
+	 * @return
+	 */
+	public String formatPath(String path) {
+		return (path.equals("/")) ? "home" : path.replace("/", "");
+	}
+	
+	/**
+	 * Getter method for the urlExtensions map
+	 * @return
+	 */
+	public Map<String, Boolean> getUrlExtensions() {
 		return this.urlExtensions;
 	}
-
 }

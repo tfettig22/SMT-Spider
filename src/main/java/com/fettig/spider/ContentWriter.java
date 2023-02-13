@@ -8,7 +8,9 @@ import java.io.IOException;
 
 <b>Title:</b> ReaderWriter.java<br>
 <b>Project:</b> spider<br>
-<b>Description:</b> <br>
+<b>Description:</b>
+	Writes characters to a new file, taking in a String and writing each character of the String one by one
+<br>
 <b>Copyright:</b> Copyright (c) 2023<br>
 <b>Company:</b> Silicon Mountain Technologies<br>
 @author Tom Fettig
@@ -18,7 +20,7 @@ import java.io.IOException;
 
 ****/
 
-public class ReaderWriter {
+public class ContentWriter {
 	
 	public File writeCharsToFile(String fileName, String content) throws IOException {
 		try (FileWriter writer = new FileWriter(fileName)) {
