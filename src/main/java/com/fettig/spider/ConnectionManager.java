@@ -50,7 +50,7 @@ public class ConnectionManager {
 		// create an SSLSocket via SSLSocketFactory
 		SSLSocketFactory factory = (SSLSocketFactory) SSLSocketFactory.getDefault();
 		try (SSLSocket socket = (SSLSocket) factory.createSocket(server, port)) {
-			
+
 			// open an output stream and send a request of specified type, to specified server and file path
 			DataOutputStream out = new DataOutputStream(socket.getOutputStream());
 			out.writeBytes(requestType + " " + path + " HTTP/1.0\r\n");
@@ -77,11 +77,11 @@ public class ConnectionManager {
 			while ((input = in.readLine()) != null) {
 				builder.append(input);
 				builder.append("\r\n");
-				// if cookies map is empty, put a new key into the map with an empty set as value
-				if (cookies.isEmpty()) {
+				// if cookies map doesn't contain the server in the keyset, add new key and set value to empty set
+				if (!cookies.keySet().contains(server)) {
 					cookies.put(server, new HashSet<>());
 				}
-				// if a line contains cookie, add that line to the cookies map
+				// if a line contains cookie, add that line to the set in cookies map
 				if (input.contains("Cookie")) {
 					cookies.get(server).add(input + "\r\n");
 				}

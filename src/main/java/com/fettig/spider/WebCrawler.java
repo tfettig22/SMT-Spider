@@ -30,10 +30,10 @@ public class WebCrawler {
 	
 	private static final String HOMEPAGE = "smt-stage.qa.siliconmtn.com";
 	private static final String ADMIN = "/sb/admintool?cPage=index&actionId=WEB_SOCKET&organizationId=SMT";
-	private static final String LOGIN_INFO = "requestType=reqBuild&pmid=ADMIN_LOGIN&emailAddress=USER_EMAIL&password=USER_PASSWORD&l=";
+	private static final String LOGIN_INFO = "requestType=reqBuild&pmid=ADMIN_LOGIN&emailAddress={USER_EMAIL}&password={USER_PASSWORD}&l=";
 
 	private Map<String, Boolean> urlExtensions = new HashMap<>();
-
+	Logger logger = Logger.getLogger(WebCrawler.class.getName());
 	
 	/**
 	 * Main method to instantiate the WebCrawler and enter into the process
@@ -46,13 +46,14 @@ public class WebCrawler {
 	}
 	
 	/**
-	 * Begins the 'crawl' process, adds / to the map so that the default page is home page
+	 * First logs in to the admin site and then begins the 'crawl' process by adding / to the map so that the default page is home page
 	 * @param server the server to connect to via socket
 	 * @param port the port number of the server
 	 * @throws IOException
 	 */
 	public void beginCrawling(String server, int port) throws IOException {
 		ConnectionManager connection = new ConnectionManager();
+		loginAndGetAdminPage(connection);
 		urlExtensions.put("/", false);
 		while (urlExtensions.values().contains(false)) {
 			crawlWebsite(connection, server, port);
@@ -66,27 +67,15 @@ public class WebCrawler {
 	 * @param port the port number of the server
 	 * @throws IOException
 	 */
-	public void crawlWebsite(ConnectionManager socket, String server, int port) throws IOException {
+	public void crawlWebsite(ConnectionManager connection, String server, int port) throws IOException {
 		// instantiate other classes
-		Logger logger = Logger.getLogger(WebCrawler.class.getName());
 		ContentWriter writer = new ContentWriter();
 		Parser parse = new Parser();
-		
-		// only create the post request and admin html file if none of the pages have been parsed - will only happen once
-		if (!urlExtensions.values().contains(true)) {
-			socket.createSocket(HOMEPAGE, 443, ADMIN, "post", LOGIN_INFO);
-			logger.log(Level.INFO, "login complete");
-			
-			// after post request is sent and login is complete, send get request for the admin page
-			String html = socket.createSocket(HOMEPAGE, 443, ADMIN, "get", null);
-			writer.writeCharsToFile("src/main/resources/smt-admin.html", html);
-			logger.log(Level.INFO, "admin file has been created");
-		}
 		
 		// iterate through all urls in map, creating a file for each one
 		for (Map.Entry<String, Boolean> entry : urlExtensions.entrySet()) {
 			if (Boolean.FALSE.equals(entry.getValue())) {
-				String html = socket.createSocket(server, port, entry.getKey(), "get", null);
+				String html = connection.createSocket(server, port, entry.getKey(), "get", null);
 				File htmlFile = writer.writeCharsToFile("src/main/resources/smt-" + formatPath(entry.getKey()) + ".html", html);
 				
 				// log to console that a file has been created
@@ -104,6 +93,23 @@ public class WebCrawler {
 				urlExtensions.put(entry.getKey(), true);
 			}
 		}
+	}
+	
+	/**
+	 * Logs in to the requested site using a post request and then gets the html of the website and writes it to a new file
+	 * @param connection the connection manager, used to create a socket
+	 * @throws IOException
+	 */
+	public void loginAndGetAdminPage(ConnectionManager connection) throws IOException {
+		ContentWriter writer = new ContentWriter();
+		// send the post request
+		connection.createSocket(HOMEPAGE, 443, ADMIN, "post", LOGIN_INFO);
+		logger.log(Level.INFO, "login complete");
+		
+		// after post request is sent and login is complete, send get request for the admin page
+		String html = connection.createSocket(HOMEPAGE, 443, ADMIN, "get", null);
+		writer.writeCharsToFile("src/main/resources/smt-admin.html", html);
+		logger.log(Level.INFO, "admin file has been created");
 	}
 	
 	/**
