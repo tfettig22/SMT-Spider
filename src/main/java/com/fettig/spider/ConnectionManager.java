@@ -17,7 +17,8 @@ import javax.net.ssl.SSLSocketFactory;
 <b>Title:</b> SocketManager.java<br>
 <b>Project:</b> spider<br>
 <b>Description:</b>
-	Creates a socket connection to a website, and return the html response as a string
+	Manages the process to connect to a website using a socket. Can handle either GET or POST requests, and will save any cookies
+	that are set. These cookies can then be send in subsequent requests and the user will be able to work within the same session.
 <br>
 <b>Copyright:</b> Copyright (c) 2023<br>
 <b>Company:</b> Silicon Mountain Technologies<br>
@@ -90,7 +91,7 @@ public class ConnectionManager {
 			in.close();
 		}
 		// if the request type is a GET, return the html response as a substring with the headers removed
-		return (requestType.equals("GET")) ? builder.substring(builder.indexOf("<"), builder.length()) : "";
+		return (requestType.equals("GET")) ? builder.substring(builder.indexOf("DOCTYPE") - 2, builder.length()) : "";
 	}
 	
 	/**

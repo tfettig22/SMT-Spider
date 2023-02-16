@@ -14,7 +14,7 @@ import java.util.logging.Level;
 <b>Description:</b>
 	This class can be used to facilitate the workflow of creating a socket and retrieving the html of a website, writing
 	that html to a new file, and parsing the html to get all of the links that exist in the page's html. A socket will
-	be created for each link/path, and a corresponding html file will be written. Uses the SocketManager, ContentWriter,
+	be created for each link/path, and a corresponding html file will be written. Uses the ConnectionManager, ContentWriter,
 	and Parser classes.
 <br>
 <b>Copyright:</b> Copyright (c) 2023<br>
@@ -36,7 +36,7 @@ public class WebCrawler {
 	Logger logger = Logger.getLogger(WebCrawler.class.getName());
 	
 	/**
-	 * Main method to instantiate the WebCrawler and enter into the process
+	 * Main method to instantiate the WebCrawler and enter into the crawling process
 	 * @param args
 	 * @throws IOException
 	 */
@@ -46,7 +46,7 @@ public class WebCrawler {
 	}
 	
 	/**
-	 * First logs in to the admin site and then begins the 'crawl' process by adding / to the map so that the default page is home page
+	 * First logs in to the admin site, and then begins the 'crawl' process by adding / to the map so that the default page is home page
 	 * @param server the server to connect to via socket
 	 * @param port the port number of the server
 	 * @throws IOException

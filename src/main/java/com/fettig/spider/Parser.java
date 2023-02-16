@@ -27,11 +27,18 @@ import org.jsoup.nodes.Document;
 
 public class Parser {
 
+	/**
+	 * Uses Jsoup to parse a file for the href attribute of any <a> tag found in the html. These attributes are stored in a set and then
+	 * filtered for any that are url extensions and contain a slash
+	 * @param file
+	 * @return
+	 * @throws IOException
+	 */
 	public Set<String> parseFile(File file) throws IOException {
 		Document doc = Jsoup.parse(file);
 		Set<String> urls = new HashSet<>();
 		doc.select("a").forEach(tag -> urls.add(tag.attr("href")));
-		
+
 		return urls.stream()
 				.filter(url -> url.contains("/"))
 				.collect(Collectors.toSet());

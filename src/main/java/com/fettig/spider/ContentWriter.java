@@ -22,6 +22,13 @@ import java.io.IOException;
 
 public class ContentWriter {
 	
+	/**
+	 * Takes in a String and writes the content to a file of a specified name
+	 * @param fileName name of the file to be written
+	 * @param content the String content to be written to the file
+	 * @return the File that was written
+	 * @throws IOException
+	 */
 	public File writeCharsToFile(String fileName, String content) throws IOException {
 		try (FileWriter writer = new FileWriter(fileName)) {
 			for (int i = 0; i < content.length(); i++) {
